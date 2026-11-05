@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Request - FixIt Pro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-person-plus me-2"></i>Assign Request</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-light border mb-4">
+                        <p class="mb-1"><strong>Request:</strong> #{{ request_obj.id }} - {{ request_obj.title }}</p>
+                        <p class="mb-1"><strong>Category:</strong> {{ request_obj.get_category_display }}</p>
+                        <p class="mb-0"><strong>Priority:</strong> <span class="badge {{ request_obj.get_priority_badge_class }}">{{ request_obj.get_priority_display }}</span></p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Select Contractor *</label>
+                            <select name="staff_id" class="form-select" required>
+                                <option value="">-- Select Contractor --</option>
+                                {% for staff in staff_members %}
+                                <option value="{{ staff.id }}">
+                                    {{ staff.get_full_name|default:staff.username }} 
+                                    ({{ staff.assigned_tasks.filter.status__in|default:"0" }} active tasks)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose a contractor based on their trade and current workload</div>
+                        </div>
+                        
+                        {% if request_obj.priority == 'urgent' %}
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" name="emergency" id="emergency">
+                            <label class="form-check-label" for="emergency"><strong>Emergency call-out</strong> &mdash; the contractor may start immediately; the quotation follows afterwards and must still be approved for payment.</label>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-2"></i>Assign Request
+                            </button>
+                            <a href="{% url 'admin_request_detail' request_obj.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Staff Workload Info -->
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Contractor Workload</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Contractor</th>
+                                    <th>Active Tasks</th>
+                                    <th>Completed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff in staff_members %}
+                                <tr>
+                                    <td>{{ staff.get_full_name|default:staff.username }}</td>
+                                    <td>
+                                        <span class="badge bg-warning">
+                                            {{ staff.assigned_tasks.filter.status__in|default:"0" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            {{ staff.assigned_tasks.filter.status|default:"0" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

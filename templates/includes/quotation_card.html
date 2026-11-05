@@ -1,0 +1,41 @@
+{# Shared quotation "document". Context: quote, role ('admin' or 'staff'), request_obj #}
+<div class="quote-doc border rounded-3 mb-3 overflow-hidden {% if quote.status == 'approved' %}border-success{% elif quote.status == 'rejected' %}border-danger{% endif %}">
+  <div class="d-flex flex-wrap justify-content-between align-items-center px-3 py-2 bg-light border-bottom">
+    <div>
+      <span class="fw-bold">Quotation Q-{{ quote.pk|stringformat:"04d" }}</span>
+      <span class="text-muted small ms-2">Revision {{ quote.revision_number }} &middot; {{ quote.created_at|date:'d M Y H:i' }}</span>
+    </div>
+    <span class="badge {% if quote.status == 'approved' %}bg-success{% elif quote.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+      {% if quote.status == 'submitted' %}<i class="bi bi-hourglass-split me-1"></i>{% elif quote.status == 'approved' %}<i class="bi bi-check-circle me-1"></i>{% else %}<i class="bi bi-x-circle me-1"></i>{% endif %}{{ quote.get_status_display }}
+    </span>
+  </div>
+  <div class="p-3">
+    {% if role == 'admin' %}<div class="small text-muted mb-2">From <strong>{{ quote.contractor.get_full_name|default:quote.contractor.username }}</strong> &middot; Request #{{ request_obj.pk }}</div>{% endif %}
+    <div class="small text-uppercase text-muted fw-semibold mb-1">Scope of work</div>
+    <p class="mb-3">{{ quote.scope|linebreaksbr }}</p>
+    <table class="table table-sm mb-2">
+      <thead class="table-light"><tr><th>Item</th><th class="text-end" style="width:9rem">Amount</th></tr></thead>
+      <tbody>
+        <tr><td>Labour</td><td class="text-end">R {{ quote.labour_amount|floatformat:2 }}</td></tr>
+        <tr><td>Materials</td><td class="text-end">R {{ quote.estimated_materials|floatformat:2 }}</td></tr>
+      </tbody>
+      <tfoot><tr class="fw-bold fs-6"><td>Total</td><td class="text-end">R {{ quote.quoted_total|floatformat:2 }}</td></tr></tfoot>
+    </table>
+    {% if quote.estimated_hours %}<div class="small text-muted"><i class="bi bi-clock me-1"></i>Estimated time: {{ quote.estimated_hours|floatformat:"-2" }} h (for information only)</div>{% endif %}
+    {% if quote.landlord_note %}
+    <div class="alert {% if quote.status == 'rejected' %}alert-danger{% else %}alert-light border{% endif %} py-2 small mt-3 mb-0">
+      <strong>Landlord{% if quote.status == 'rejected' %} rejected this quotation{% endif %}:</strong> {{ quote.landlord_note }}
+    </div>{% endif %}
+    {% if role == 'admin' and quote.status == 'submitted' %}
+    <form method="post" action="{% url 'admin_review_quotation' quote.pk %}" class="mt-3 pt-3 border-top">{% csrf_token %}
+      <label class="form-label small fw-semibold">Decision note <span class="text-muted fw-normal">(required if you reject)</span></label>
+      <textarea class="form-control mb-2" name="note" rows="2" placeholder="e.g. Labour is too high for a tap replacement. Please revise to R600 or less."></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-success" name="decision" value="approved"><i class="bi bi-check2-circle me-1"></i>Approve R {{ quote.quoted_total|floatformat:2 }}</button>
+        <button class="btn btn-outline-danger" name="decision" value="rejected"><i class="bi bi-arrow-counterclockwise me-1"></i>Reject and ask for a revision</button>
+      </div>
+      <div class="form-text">Approving fixes the price. Rejecting sends your note to the contractor, who can submit a revised quotation.</div>
+    </form>
+    {% endif %}
+  </div>
+</div>

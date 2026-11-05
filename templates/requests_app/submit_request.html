@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Submit Maintenance Request - FixIt Pro{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:920px">
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+<div class="card-header bg-primary text-white p-4"><h3 class="mb-1"><i class="bi bi-tools me-2"></i>Submit Maintenance Request</h3><p class="mb-0 opacity-75">Provide details so your landlord can arrange the right repair.</p></div>
+<div class="card-body p-4 p-md-5">
+<div class="alert alert-light border"><div class="fw-semibold mb-1"><i class="bi bi-geo-alt me-2"></i>Your verified residence details</div><div>Tenant: {{ request.user.get_full_name|default:request.user.username }} · Residence: <strong>{{ lease.residence }}</strong> · Room: <strong>{{ lease.unit }}</strong></div><small class="text-muted">Your room is linked to your approved tenant account and cannot be changed in this request. Contact the landlord if it is incorrect.</small></div>
+{% if not request.user.apartment_number %}<div class="alert alert-warning">Your account has no room number. Contact the landlord to correct your tenancy details.</div>{% endif %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i><strong>Immediate danger?</strong> For fire, exposed live wires or major flooding, contact your residence emergency contact or emergency services immediately. Do not rely on this form for emergency assistance.</div>
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+<h5 class="border-bottom pb-2 mb-3">1. Describe the issue</h5>
+<div class="mb-3"><label class="form-label fw-semibold" for="id_title">Issue title *</label>{{ form.title }}{{ form.title.errors }}</div>
+<div class="row"><div class="col-md-6 mb-3"><label class="form-label fw-semibold" for="id_category">Category *</label>{{ form.category }}{{ form.category.errors }}</div><div class="col-md-6 mb-3"><label class="form-label fw-semibold" for="id_priority">Urgency *</label>{{ form.priority }}<div class="form-text">{{ form.priority.help_text }}</div>{{ form.priority.errors }}</div></div>
+<div class="mb-3"><label class="form-label fw-semibold" for="id_description">What is wrong? *</label>{{ form.description }}{{ form.description.errors }}<div class="form-text">Explain the symptoms, what is affected and any steps you already took.</div></div>
+<div class="mb-3"><label class="form-label fw-semibold" for="id_incident_at">When did you first notice the issue?</label>{{ form.incident_at }}{{ form.incident_at.errors }}<div class="form-text">The date you report it will be recorded automatically.</div></div>
+<div class="form-check mb-4">{{ form.safety_risk }}<label class="form-check-label" for="id_safety_risk">This issue may pose a safety risk</label>{{ form.safety_risk.errors }}</div>
+<h5 class="border-bottom pb-2 mb-3">2. Problem area</h5>
+<div class="alert alert-light border">Residence: <strong>{{ lease.residence }}</strong> · Room: <strong>{{ lease.unit }}</strong> · Floor: {{ lease.floor|default:'Not specified' }}<br><small class="text-muted">Verified from your lease; cannot be edited here.</small></div>
+<div class="mb-4"><label class="form-label" for="id_location_description">Exact area of the problem</label>{{ form.location_description }}<div class="form-text">Only specify the area affected, e.g. bathroom, kitchen or shared corridor. Your residence and room are already known.</div>{{ form.location_description.errors }}</div>
+<h5 class="border-bottom pb-2 mb-3">3. Photos and access arrangements</h5>
+<div class="mb-3"><label class="form-label" for="id_photo">Photo of the problem (optional)</label>{{ form.photo }}{{ form.photo.errors }}<div class="form-text">JPG, PNG or other supported image, up to 5 MB.</div><img id="fixit-photo-preview" alt="Selected maintenance issue" class="img-thumbnail mt-2 d-none" style="max-height:230px"></div>
+<fieldset class="mb-3"><legend class="fs-6 fw-semibold">Permission to enter your room</legend>{% for option in form.access_permission %}<div class="form-check mb-1">{{ option.tag }}<label class="form-check-label" for="{{ option.id_for_label }}">{{ option.choice_label }}</label></div>{% endfor %}{{ form.access_permission.errors }}</fieldset>
+<div class="alert alert-info">If you must be present, the landlord will propose an appointment. You must confirm it before it is considered booked. Your preference below is not a confirmed appointment.</div>
+<div class="mb-4"><label class="form-label fw-semibold" for="id_preferred_visit_time">Preferred visit time (optional)</label>{{ form.preferred_visit_time }}{{ form.preferred_visit_time.errors }}<div class="form-text">A preference only; the landlord or contractor will confirm arrangements.</div></div>
+<div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-send me-2"></i>Submit request</button><a class="btn btn-outline-secondary btn-lg" href="{% url 'tenant_dashboard' %}">Back to dashboard</a></div>
+</form></div></div></div>
+{% endblock %}
+{% block extra_js %}<script>document.getElementById('id_photo')?.addEventListener('change',function(){const file=this.files?.[0],preview=document.getElementById('fixit-photo-preview');if(file){preview.src=URL.createObjectURL(file);preview.classList.remove('d-none')}else{preview.classList.add('d-none')}});</script>{% endblock %}

@@ -1,0 +1,420 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - FixIt Pro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1 fw-bold">Administrator Dashboard</h3>
+                    <p class="text-muted mb-0">System overview and management</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'pending_tenants' %}" class="btn btn-outline-warning">Verify Tenants</a>
+                    <a href="{% url 'all_requests' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul me-2"></i>All Requests
+                    </a>
+                    <a href="{% url 'reports' %}" class="btn btn-primary">
+                        <i class="bi bi-graph-up me-2"></i>Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if availability_offers %}
+    <div class="card border-info mb-4">
+        <div class="card-header bg-info bg-opacity-10 py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2"></i>Contractor availability received</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for offer in availability_offers %}
+            <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
+                <div>
+                    <strong>Request #{{ offer.request_id }}: {{ offer.request.title }}</strong>
+                    <div class="small text-muted">
+                        {{ offer.proposed_by.get_full_name|default:offer.proposed_by.username }} is available
+                        {{ offer.starts_at|date:'D d M Y H:i' }}–{{ offer.ends_at|date:'H:i' }}
+                        for {{ offer.request.tenant.get_full_name|default:offer.request.tenant.username }}
+                        {% if offer.note %}&middot; {{ offer.note }}{% endif %}
+                    </div>
+                </div>
+                <a href="{% url 'admin_request_detail' offer.request_id %}" class="btn btn-sm btn-primary">
+                    Review and send to tenant
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistics Cards Row 1 -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-2">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-2">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">{{ total_requests }}</h4>
+                    <p class="text-muted mb-0 small">Total</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card h-100" style="border-left-color: #f59e0b !important;">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning mx-auto mb-2">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">{{ pending_requests }}</h4>
+                    <p class="text-muted mb-0 small">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card h-100" style="border-left-color: #06b6d4 !important;">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info mx-auto mb-2">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">{{ assigned_requests }}</h4>
+                    <p class="text-muted mb-0 small">Assigned</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card h-100" style="border-left-color: #8b5cf6 !important;">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info mx-auto mb-2">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">{{ in_progress_requests }}</h4>
+                    <p class="text-muted mb-0 small">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card h-100" style="border-left-color: #22c55e !important;">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-2">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">{{ completed_requests }}</h4>
+                    <p class="text-muted mb-0 small">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stat-card h-100" style="border-left-color: #ef4444 !important;">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto mb-2">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <h4 class="mb-0 fw-bold">R{{ total_cost|floatformat:0 }}</h4>
+                    <p class="text-muted mb-0 small">Total Cost</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cost Breakdown & User Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-cash-coin me-2"></i>Cost Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <p class="text-muted mb-1 small">Parts Cost</p>
+                                <h5 class="mb-0 fw-bold text-success">R{{ total_parts_cost|floatformat:2 }}</h5>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <p class="text-muted mb-1 small">Labor Cost</p>
+                                <h5 class="mb-0 fw-bold text-warning">R{{ total_labor_cost|floatformat:2 }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center bg-dark text-white rounded-3 p-3">
+                            <span class="fw-medium">Total Expenses</span>
+                            <h5 class="mb-0 fw-bold">R{{ total_cost|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>User Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3 text-center">
+                                <i class="bi bi-person text-info fs-2"></i>
+                                <p class="text-muted mb-1 small">Total Tenants</p>
+                                <h5 class="mb-0 fw-bold">{{ total_tenants }}</h5>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3 text-center">
+                                <i class="bi bi-tools text-warning fs-2"></i>
+                                <p class="text-muted mb-1 small">Contractors</p>
+                                <h5 class="mb-0 fw-bold">{{ total_staff }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a href="{% url 'manage_staff' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-people me-2"></i>Manage Contractor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Trend Chart -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-line me-2"></i>Requests Over Time</h5>
+                    <small class="text-muted">Last 6 months</small>
+                </div>
+                <div class="card-body">
+                    <canvas id="requestsMonthlyChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Urgent Requests -->
+    {% if urgent_requests %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger" style="border-left: 4px solid #ef4444 !important;">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Urgent Requests Requiring Attention</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Tenant</th>
+                                    <th>Apartment</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in urgent_requests %}
+                                <tr>
+                                    <td>#{{ req.id }}</td>
+                                    <td>{{ req.title|truncatechars:25 }}</td>
+                                    <td><span class="badge bg-secondary">{{ req.get_category_display }}</span></td>
+                                    <td>{{ req.tenant.get_full_name|default:req.tenant.username }}</td>
+                                    <td>{{ req.apartment_number }}</td>
+                                    <td><span class="badge bg-{{ req.status }}">{{ req.get_status_display }}</span></td>
+                                    <td>
+                                        <a href="{% url 'admin_request_detail' req.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if not req.assigned_staff %}
+                                        <a href="{% url 'assign_request' req.id %}" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-person-plus"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Recent Requests -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Requests</h5>
+                    <a href="{% url 'all_requests' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Category</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Tenant</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in recent_requests %}
+                                    <tr>
+                                        <td>#{{ req.id }}</td>
+                                        <td>{{ req.title|truncatechars:25 }}</td>
+                                        <td><span class="badge bg-secondary">{{ req.get_category_display }}</span></td>
+                                        <td><span class="badge bg-{{ req.priority }}">{{ req.get_priority_display }}</span></td>
+                                        <td><span class="badge bg-{{ req.status }}">{{ req.get_status_display }}</span></td>
+                                        <td>{{ req.tenant.get_full_name|default:req.tenant.username }}</td>
+                                        <td>{{ req.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'admin_request_detail' req.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                            <h5 class="mt-3 text-muted">No requests yet</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Feed & Staff Workload -->
+<div class="container py-2 mb-4">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-activity me-2"></i>Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if activity_feed %}
+                        {% for entry in activity_feed %}
+                        <div class="activity-item">
+                            <div class="activity-dot
+                                {% if entry.new_status == 'completed' %}green
+                                {% elif entry.new_status == 'in_progress' %}violet
+                                {% elif entry.new_status == 'cancelled' %}red
+                                {% elif entry.new_status == 'assigned' %}teal
+                                {% endif %}"></div>
+                            <div class="flex-grow-1">
+                                <div class="small">
+                                    <strong>{{ entry.changed_by.get_full_name|default:entry.changed_by.username }}</strong>
+                                    moved <a href="{% url 'admin_request_detail' entry.request.id %}">#{{ entry.request.id }} {{ entry.request.title|truncatechars:30 }}</a>
+                                    from <span class="badge bg-{{ entry.old_status }}">{{ entry.get_old_status_display }}</span>
+                                    to <span class="badge bg-{{ entry.new_status }}">{{ entry.get_new_status_display }}</span>
+                                </div>
+                                <div class="text-muted" style="font-size:0.75rem">{{ entry.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-clock-history" style="font-size:2rem"></i>
+                            <p class="mt-2 mb-0">No activity recorded yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Contractor Workload</h5>
+                    <a href="{% url 'manage_staff' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+                </div>
+                <div class="card-body">
+                    {% if staff_workload %}
+                        {% for row in staff_workload %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small fw-bold">{{ row.staff.get_full_name|default:row.staff.username }}</span>
+                                <span class="small text-muted">{{ row.active }} active &middot; {{ row.completed }} done</span>
+                            </div>
+                            {% with total=row.active|add:row.completed %}
+                            <div class="progress">
+                                {% if total > 0 %}
+                                <div class="progress-bar teal" style="width: {% widthratio row.completed total 100 %}%"></div>
+                                {% else %}
+                                <div class="progress-bar teal" style="width: 0%"></div>
+                                {% endif %}
+                            </div>
+                            {% endwith %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-person-x" style="font-size:2rem"></i>
+                            <p class="mt-2 mb-0">No contractors members yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    (function(){
+        const labels = [{% for item in monthly_stats %}'{{ item.label }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const data = [{% for item in monthly_stats %}{{ item.requests }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const ctx = document.getElementById('requestsMonthlyChart');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Requests',
+                    data: data,
+                    backgroundColor: 'rgba(6,182,212,0.12)',
+                    borderColor: '#06b6d4',
+                    pointBackgroundColor: '#06b6d4',
+                    pointBorderColor: '#fff',
+                    tension: 0.35,
+                    fill: true,
+                    pointRadius: 4,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Note - FixIt Pro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="bi bi-journal-plus me-2"></i>Add Note</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-light border mb-4">
+                        <p class="mb-0"><strong>Request:</strong> #{{ request_obj.id }} - {{ request_obj.title }}</p>
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="id_note" class="form-label">Note *</label>
+                            {{ form.note }}
+                            {% if form.note.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.note.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Add detailed notes about the work performed, issues encountered, or any other relevant information</div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-info text-white">
+                                <i class="bi bi-plus-circle me-2"></i>Add Note
+                            </button>
+                            <a href="{% url 'staff_request_detail' request_obj.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

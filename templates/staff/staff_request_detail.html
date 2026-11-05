@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Contractor Job - FixIt Pro{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h3 class="mb-1">{{ request_obj.title }}</h3>
+      <span class="badge {{ request_obj.get_status_badge_class }}">{{ request_obj.get_status_display }}</span>
+      <span class="badge {{ request_obj.get_priority_badge_class }}">{{ request_obj.get_priority_display }}</span>
+    </div>
+    <a href="{% url 'my_tasks' %}" class="btn btn-outline-secondary">My Tasks</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if request_obj.sla_pause_started_at %}<div class="alert alert-warning">Waiting for parts. {% if request_obj.sla_pause_approved %}SLA pause approved by landlord.{% else %}SLA pause awaiting landlord approval.{% endif %}</div>{% endif %}
+  {% if request_obj.is_sla_breached %}
+    <div class="alert alert-danger"><strong>SLA breached.</strong> Work can continue. The landlord has been notified; complete the repair as soon as practical.</div>
+  {% endif %}
+  {% if request_obj.rework_count and request_obj.status == 'assigned' %}
+  <div class="alert alert-warning"><strong>Return visit required.</strong> The tenant reports the repair is not fixed. Accept the job, then offer the landlord the times you are available. The landlord asks the tenant to confirm, and you can start once the tenant has.</div>
+  {% endif %}
+  {% if access_failed %}
+  <div class="alert alert-danger"><i class="bi bi-door-closed me-1"></i><strong>No access at the last visit.</strong> The landlord and tenant have been told.
+    {% if confirmed_appointment %}The tenant has confirmed a return visit on <strong>{{ confirmed_appointment.starts_at|date:'d M Y H:i' }}</strong>. After the visit, edit your visit record to &ldquo;Access gained&rdquo;, upload a photo and mark the job complete.
+    {% elif awaiting_tenant %}A new time ({{ awaiting_tenant.starts_at|date:'d M H:i' }}) has been sent to the tenant. Waiting for the tenant to confirm.
+    {% else %}Offer the landlord a time you can return; the tenant has to confirm it.{% endif %}</div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <h5><i class="bi bi-wrench-adjustable me-2"></i>Work Order</h5>
+          <p>{{ request_obj.description|linebreaks }}</p>
+          {% if request_obj.emergency_callout %}<p><span class="badge bg-danger"><i class="bi bi-lightning-charge-fill"></i> Emergency call-out: start immediately, quotation follows</span></p>{% endif %}
+          {% if request_obj.safety_risk %}<p><span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Tenant reports a safety risk</span></p>{% endif %}
+          <div class="row small mb-3">
+            <div class="col-md-6 mb-2"><div class="text-muted">Location</div><strong>{{ request_obj.building }} &middot; Unit {{ request_obj.apartment_number }}{% if request_obj.floor %} &middot; Floor {{ request_obj.floor }}{% endif %}</strong><br>{{ request_obj.location_description }}</div>
+            <div class="col-md-6 mb-2"><div class="text-muted">Fault noticed</div><strong>{% if request_obj.incident_at %}{{ request_obj.incident_at|date:'d M Y H:i' }}{% else %}Not stated{% endif %}</strong></div>
+            <div class="col-md-6 mb-2"><div class="text-muted">Tenant access</div><strong>{{ request_obj.get_access_permission_display }}</strong></div>
+            <div class="col-md-6 mb-2"><div class="text-muted">Preferred visit time</div><strong>{{ request_obj.get_preferred_visit_time_display|default:'No preference' }}</strong></div>
+          </div>
+          {% if request_obj.photo %}<img src="{{ request_obj.photo.url }}" class="img-fluid rounded" style="max-height:300px" alt="Request evidence">{% endif %}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5><i class="bi bi-file-earmark-text me-2"></i>Quotation</h5>
+          {% for quote in quotations %}{% include 'includes/quotation_card.html' with quote=quote role='staff' %}
+          {% empty %}<p class="text-muted">You have not submitted a quotation yet.</p>{% endfor %}
+          {% if can_submit_quote %}
+          <div class="border rounded-3 p-3 bg-light">
+            <h6 class="mb-1">{% if last_rejected %}Revise your quotation (revision {{ last_rejected.revision_number|add:1 }}){% else %}Prepare your quotation{% endif %}</h6>
+            <p class="small text-muted mb-3">{% if last_rejected %}The landlord asked for changes (see above). Your previous figures are filled in: adjust them and resubmit.{% else %}Tell the landlord what you will do and what it costs. The labour amount you enter is the price you will be paid.{% endif %}</p>
+            <form method="post" action="{% url 'staff_submit_quotation' request_obj.pk %}" id="quote-form">{% csrf_token %}
+              <div class="mb-3"><label class="form-label fw-semibold">{{ quotation_form.scope.label }}</label>{{ quotation_form.scope }}</div>
+              <div class="row g-3">
+                <div class="col-sm-4"><label class="form-label fw-semibold">Labour</label><div class="input-group"><span class="input-group-text">R</span>{{ quotation_form.labour_amount }}</div></div>
+                <div class="col-sm-4"><label class="form-label fw-semibold">Materials <span class="text-muted fw-normal">(optional)</span></label><div class="input-group"><span class="input-group-text">R</span>{{ quotation_form.estimated_materials }}</div></div>
+                <div class="col-sm-4"><label class="form-label fw-semibold">Time <span class="text-muted fw-normal">(hours, optional)</span></label>{{ quotation_form.estimated_hours }}</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-white border rounded"><span class="text-muted">Quotation total</span><span class="fs-4 fw-bold" id="quote-total">R 0.00</span></div>
+              <button class="btn btn-primary mt-3"><i class="bi bi-send me-1"></i>{% if last_rejected %}Submit revised quotation{% else %}Submit quotation for approval{% endif %}</button>
+            </form>
+            <p class="small text-muted mt-2 mb-0">{% if request_obj.emergency_callout %}Emergency call-out: you may start work now; submit your quotation before completing the job.{% else %}You cannot start work until the landlord approves your quotation and the tenant confirms a visit.{% endif %}</p>
+          </div>
+          <script>
+            (function(){var f=document.getElementById('quote-form');if(!f)return;
+              function n(x){var v=parseFloat(x.value);return isNaN(v)?0:v}
+              function upd(){var t=n(f.labour_amount)+n(f.estimated_materials);document.getElementById('quote-total').textContent='R '+t.toFixed(2)}
+              f.addEventListener('input',upd);upd();})();
+          </script>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5><i class="bi bi-calendar-check me-2"></i>Visit appointments</h5>
+          <p class="small text-muted">After you accept the job, tell the landlord when you are available. The landlord proposes a time to the tenant, and you can start work once the tenant has confirmed it.</p>
+          {% for appt in appointments %}
+            <p class="mb-2"><strong>{{ appt.starts_at|date:'d M Y H:i' }} &ndash; {{ appt.ends_at|date:'H:i' }}</strong> &middot;
+            <span class="badge {% if appt.status == 'confirmed' or appt.status == 'attended' %}bg-success{% elif appt.status == 'no_access' %}bg-danger{% elif appt.status == 'cancelled' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{% if appt.status == 'availability' %}Offered to landlord{% elif appt.status == 'proposed' %}Waiting for tenant{% else %}{{ appt.get_status_display }}{% endif %}</span>
+            {% if appt.tenant_response %}<br><small>Tenant: {{ appt.tenant_response }}</small>{% endif %}</p>
+          {% empty %}<p class="text-muted">No visit has been arranged yet. {% if request_obj.status == 'assigned' %}Accept the job first, then offer your availability.{% else %}Offer your availability below; the landlord will propose a time to the tenant.{% endif %}</p>{% endfor %}
+          {% if confirmed_appointment %}
+            <div class="alert alert-success py-2 mb-0"><i class="bi bi-check-circle me-1"></i>The tenant confirmed {{ confirmed_appointment.starts_at|date:'d M Y H:i' }}.</div>
+          {% elif can_offer_availability %}
+            <hr><h6>{% if request_obj.rework_count or access_failed %}Offer a time for the return visit{% else %}When are you available to visit?{% endif %}</h6>
+            {% if availability_offer %}<div class="alert alert-info py-2 small"><i class="bi bi-send-check me-1"></i>You offered {{ availability_offer.starts_at|date:'d M H:i' }}. It is with the landlord, who will send it to the tenant. Sending another time replaces it.</div>{% endif %}
+            <form method="post" action="{% url 'staff_offer_availability' request_obj.id %}">{% csrf_token %}
+              <div class="row g-2">
+                <div class="col-md-6"><label class="form-label small">I am available from</label><input required type="datetime-local" name="starts_at" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label small">until</label><input required type="datetime-local" name="ends_at" class="form-control"></div>
+              </div>
+              <input name="note" class="form-control mt-2" placeholder="Note for the landlord (optional), e.g. I need about two hours">
+              <button class="btn btn-outline-primary mt-2">Send availability to landlord</button>
+              <div class="form-text">The landlord passes it to the tenant, who must confirm it.</div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5><i class="bi bi-clipboard-check me-2"></i>Contractor visit / access record</h5>
+          {% if visit_record %}
+            <p class="mb-1"><strong>Access outcome:</strong> {% if visit_record.access_outcome == 'access_granted' %}<span class="badge bg-success">Access gained</span>{% else %}<span class="badge bg-danger">No access</span>{% endif %}</p>
+            <p class="mb-1"><strong>Work started:</strong> {{ request_obj.started_at|date:'d M Y H:i' }}</p>
+            <p class="mb-2"><strong>Work completed:</strong> {% if request_obj.completed_at %}{{ request_obj.completed_at|date:'d M Y H:i' }}{% else %}<span class="text-muted">Recorded automatically when you mark the job complete</span>{% endif %}</p>
+            <p class="mb-2"><strong>Notes:</strong><br>{{ visit_record.notes|linebreaksbr }}</p>
+            {% if request_obj.status == 'in_progress' or request_obj.status == 'awaiting_parts' %}
+            <details class="mt-2" {% if access_failed and confirmed_appointment %}open{% endif %}><summary class="btn btn-sm btn-outline-secondary">{% if access_failed %}Update record after the return visit{% else %}Edit record{% endif %}</summary>
+              <form method="post" action="{% url 'staff_edit_work_log' request_obj.id %}" class="mt-3">{% csrf_token %}
+                <div class="mb-2">{{ work_log_form.access_outcome.label_tag }}<div>{% for r in work_log_form.access_outcome %}<label class="me-3">{{ r.tag }} {{ r.choice_label }}</label>{% endfor %}</div></div>
+                <textarea name="notes" class="form-control" rows="4" required minlength="10">{{ visit_record.notes }}</textarea>
+                <button class="btn btn-primary mt-2">Save changes</button>
+              </form>
+            </details>
+            {% endif %}
+            <div class="form-text mt-2">Only one record is kept for each visit round. You can edit it, but not add another.</div>
+          {% elif request_obj.status == 'in_progress' or request_obj.status == 'awaiting_parts' %}
+            <p class="text-muted small">Start and completion times are recorded automatically. Say whether you got access and describe the work done. This record is required before you can mark the job complete.</p>
+            <form method="post" action="{% url 'staff_add_work_log' request_obj.id %}">
+              {% csrf_token %}
+              <div class="mb-2">{{ work_log_form.access_outcome.label_tag }}<div>{% for r in work_log_form.access_outcome %}<label class="me-3">{{ r.tag }} {{ r.choice_label }}</label>{% endfor %}</div></div>
+              {{ work_log_form.notes.label_tag }}
+              {{ work_log_form.notes }}
+              <button class="btn btn-primary mt-3">Save visit record</button>
+            </form>
+          {% elif request_obj.status == 'accepted' %}
+            <p class="text-muted mb-0">Click <strong>Start Work</strong> first. The visit record can only be completed once work has started.</p>
+          {% else %}
+            <p class="text-muted mb-0">The visit record is not available at this stage.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if not request_obj.quotation_required %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5>Materials / Parts Used</h5>
+          <form method="post" action="{% url 'staff_add_material' request_obj.id %}">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-5">{{ material_form.description.label_tag }}{{ material_form.description }}</div>
+              <div class="col-md-3">{{ material_form.quantity.label_tag }}{{ material_form.quantity }}</div>
+              <div class="col-md-4">{{ material_form.unit_cost.label_tag }}{{ material_form.unit_cost }}</div>
+            </div>
+            <button class="btn btn-outline-primary mt-3">Record Material</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5>Status History</h5>
+          {% for h in status_history %}
+            <p class="mb-2"><strong>{{ h.get_new_status_display }}</strong> — {{ h.created_at|date:'d M Y H:i' }}<br><small>{{ h.notes }}</small></p>
+          {% empty %}<p class="text-muted mb-0">No status history.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <h5>Actions</h5>
+          {% if request_obj.status == 'assigned' %}
+          <form method="post" action="{% url 'staff_reject_job' request_obj.id %}" class="mb-2">{% csrf_token %}<input name="reason" class="form-control mb-1" minlength="5" placeholder="Reason for declining" required><button class="btn btn-outline-danger w-100">Decline Assignment</button></form>
+          <form method="post" action="{% url 'staff_accept_job' request_obj.id %}">{% csrf_token %}<button class="btn btn-primary w-100 mb-2"><i class="bi bi-check2-circle me-1"></i>Accept Job</button></form>
+          {% elif request_obj.status == 'accepted' %}
+            {% if start_blocker %}
+            <button class="btn btn-secondary w-100 mb-1" disabled><i class="bi bi-lock me-1"></i>Start Work</button>
+            <div class="form-text mb-2 text-danger">{{ start_blocker }}</div>
+            {% else %}
+            <form method="post" action="{% url 'staff_start_job' request_obj.id %}">{% csrf_token %}<button class="btn btn-teal w-100 mb-2"><i class="bi bi-play-circle me-1"></i>Start Work</button></form>
+            {% endif %}
+          {% elif request_obj.status == 'in_progress' %}
+          <form method="post" action="{% url 'staff_awaiting_parts' request_obj.id %}">{% csrf_token %}<textarea name="reason" class="form-control mb-2" minlength="8" required placeholder="Which parts are needed and why?"></textarea><button class="btn btn-warning w-100 mb-2"><i class="bi bi-box-seam me-1"></i>Awaiting Parts</button></form>
+          {% elif request_obj.status == 'awaiting_parts' %}
+          <form method="post" action="{% url 'staff_resume_job' request_obj.id %}">{% csrf_token %}<button class="btn btn-teal w-100 mb-2"><i class="bi bi-arrow-repeat me-1"></i>Resume Work</button></form>
+          {% endif %}
+          {% if completion_checks %}
+          <div class="border rounded p-2 mb-2 small"><div class="fw-semibold mb-1">Before you can complete</div>
+            {% for c in completion_checks %}<div class="{% if c.ok %}text-success{% else %}text-muted{% endif %}"><i class="bi {% if c.ok %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-1"></i>{{ c.label }}{% if not c.ok and c.hint %}<div class="ms-4 text-muted">{{ c.hint }}</div>{% endif %}</div>{% endfor %}
+          </div>
+          <form method="post" action="{% url 'staff_mark_complete' request_obj.id %}" class="mb-2">{% csrf_token %}
+            <button class="btn btn-success w-100"><i class="bi bi-check-circle me-1"></i>Mark Task Complete</button>
+          </form>
+          {% endif %}
+          {% if request_obj.status == 'accepted' or request_obj.status == 'in_progress' or request_obj.status == 'awaiting_parts' %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'staff_add_note' request_obj.id %}">Add Note</a>{% endif %}
+          {% if request_obj.status == 'in_progress' or request_obj.status == 'awaiting_parts' %}
+          <form method="post" enctype="multipart/form-data" action="{% url 'add_attachment' request_obj.id %}" class="mt-2">
+            {% csrf_token %}
+            <label class="form-label small fw-semibold mb-1"><i class="bi bi-camera me-1"></i>Work evidence photo (required)</label>
+            {{ attachment_form.file }}
+            {{ attachment_form.description }}
+            <button class="btn btn-outline-secondary w-100 mt-2">Upload Work Evidence</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="container pb-4">
+ <div class="card"><div class="card-body"><h5>Payment acknowledgements</h5>
+ {% for payment in payments %}<div class="border rounded p-2 mb-2"><p>R{{ payment.amount }} — {{ payment.payment_date }} — Reference {{ payment.reference }} — <strong>{{ payment.get_status_display }}</strong></p>
+ {% if payment.status == 'recorded' %}<form method="post" action="{% url 'staff_acknowledge_payment' payment.pk %}">{% csrf_token %}
+ <textarea name="comment" class="form-control mb-2" placeholder="Optional comment (required for dispute)"></textarea>
+ <button class="btn btn-success" name="decision" value="confirmed">Confirm receipt</button>
+ <button class="btn btn-outline-danger" name="decision" value="disputed">Dispute payment</button></form>{% endif %}</div>
+ {% empty %}<p class="text-muted">No payment records for this request.</p>{% endfor %}</div></div>
+</div>
+{% endblock %}

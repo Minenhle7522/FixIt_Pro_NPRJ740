@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Update Request - Admin - FixIt Pro{% endblock %}
+{% block content %}
+<div class="container py-4"><div class="row justify-content-center"><div class="col-lg-8"><div class="card shadow"><div class="card-header bg-warning text-white"><h4 class="mb-0">Update Request Details</h4></div><div class="card-body p-4">
+<div class="alert alert-light border"><strong>Request:</strong> #{{ request_obj.id }} - {{ request_obj.title }}<br><small>Assignment and status changes use the workflow actions. Labour, material and total costs are calculated automatically.</small></div>
+<form method="post" novalidate>{% csrf_token %}
+<div class="row"><div class="col-md-6 mb-3"><label class="form-label">Priority</label>{{ form.priority }}</div>{% if form.approved_hourly_rate %}<div class="col-md-6 mb-3"><label class="form-label">Approved Labour Rate (R/hour)</label>{{ form.approved_hourly_rate }}<div class="form-text">Admin-controlled before work starts. Calculated labour totals cannot be edited manually.</div></div>{% else %}<div class="col-md-6 mb-3"><div class="form-text mt-4">The price of this job is set by the contractor's quotation once you approve it.</div></div>{% endif %}</div>
+<div class="mb-3"><label class="form-label">Parts Required</label>{{ form.parts_required }}</div>
+<div class="mb-3"><label class="form-label">Diagnosis</label>{{ form.diagnosis }}</div>
+<div class="mb-3"><label class="form-label">Admin Notes</label>{{ form.admin_notes }}</div>
+{% for field in form %}{% for error in field.errors %}<div class="alert alert-danger py-2">{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+<div class="d-flex gap-2"><button type="submit" class="btn btn-warning text-white">Save Details</button><a href="{% url 'admin_request_detail' request_obj.id %}" class="btn btn-outline-secondary">Cancel</a></div></form>
+</div></div></div></div></div>
+{% endblock %}

@@ -1,0 +1,14 @@
+FixIt Pro - ready to run (database and demo accounts already created)
+
+1. Open a terminal in THIS folder (the one containing manage.py).
+2. pip install -r requirements.txt        (first time only)
+3. python manage.py runserver             (on Windows you can use: py -3 manage.py runserver)
+4. Open http://127.0.0.1:8000/  (use 127.0.0.1 or localhost, not another address)
+
+Logins (username, not email) - password for all: password123
+  admin      = Landlord
+  tenant     = Tenant
+  contractor = Contractor (Mike)
+  contractor2 = Contractor (Sarah)
+
+Do NOT run setup.py or demo_data.py again unless you want to reset the demo.

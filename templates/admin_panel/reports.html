@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - FixIt Pro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><i class="bi bi-graph-up me-2"></i>Reports</h3>
+                    <p class="text-muted mb-0">Generate maintenance activity reports</p>
+                </div>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Report Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Report Parameters</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="{% url 'generate_report' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="report_type" class="form-label">Report Type</label>
+                            <select name="report_type" id="report_type" class="form-select">
+                                <option value="summary">Summary Report</option>
+                                <option value="detailed">Detailed Report</option>
+                            </select>
+                            <div class="form-text">Summary provides overview statistics, Detailed includes all requests</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">Start Date *</label>
+                                <input type="date" name="start_date" id="start_date" class="form-control" 
+                                       value="{{ start_date|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">End Date *</label>
+                                <input type="date" name="end_date" id="end_date" class="form-control" 
+                                       value="{{ end_date|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-file-earmark-text me-2"></i>Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Date Selections -->
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar me-2"></i>Quick Select</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDateRange(7)">Last 7 Days</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDateRange(30)">Last 30 Days</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDateRange(90)">Last 3 Months</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDateRange(180)">Last 6 Months</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDateRange(365)">Last Year</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function formatLocalDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function setDateRange(days) {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - days);
+
+        document.getElementById('end_date').value = formatLocalDate(endDate);
+        document.getElementById('start_date').value = formatLocalDate(startDate);
+    }
+</script>
+{% endblock %}

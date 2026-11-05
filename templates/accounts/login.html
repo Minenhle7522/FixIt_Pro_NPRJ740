@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — FixIt Pro{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo"><i class="bi bi-wrench-adjustable"></i></div>
+    <div class="text-center mb-4">
+      <h4 class="mb-1">Welcome back</h4>
+      <p class="text-muted small">Sign in to your FixIt Pro account</p>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
+      </div>
+      <button type="submit" class="btn btn-amber w-100 py-2" style="font-size:0.95rem">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+
+    <p class="text-center mt-3 small"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+    <p class="text-center mt-3 text-muted small">No account? <a href="{% url 'register' %}" class="fw-600" style="color:var(--navy-800)">Register here</a></p>
+
+    <!-- Demo credentials removed for security; use setup.py to create demo users if needed -->
+  </div>
+</div>
+{% endblock %}

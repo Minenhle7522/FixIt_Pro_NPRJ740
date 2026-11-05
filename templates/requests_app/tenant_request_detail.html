@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Request #{{ request_obj.id }} - FixIt Pro{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div><a href="{% url 'tenant_dashboard' %}">← Dashboard</a><h3 class="mt-2">{{ request_obj.title }}</h3><span class="badge {{ request_obj.get_status_badge_class }}">{{ request_obj.get_status_display }}</span> <span class="badge {{ request_obj.get_priority_badge_class }}">{{ request_obj.get_priority_display }}</span></div>
+    <div><strong>#{{ request_obj.id }}</strong></div>
+  </div>
+  {% if request_obj.is_sla_breached %}<div class="alert alert-danger"><strong>SLA BREACHED.</strong> This request exceeded its response/resolution target.</div>{% elif request_obj.sla_state == 'at_risk' %}<div class="alert alert-warning"><strong>SLA AT RISK.</strong> Deadline: {{ request_obj.sla_deadline|date:'d M Y H:i' }}{% endif %}
+  {% if progress %}
+  <div class="card p-3 mb-4"><div class="d-flex justify-content-between text-center" style="gap:4px">
+    {% for step in progress %}
+    <div style="flex:1;position:relative">
+      <div class="mx-auto d-flex align-items-center justify-content-center rounded-circle {% if step.state == 'done' %}bg-success text-white{% elif step.state == 'current' %}bg-primary text-white{% else %}bg-light text-muted border{% endif %}" style="width:34px;height:34px;font-size:.9rem">{% if step.state == 'done' %}<i class="bi bi-check-lg"></i>{% else %}{{ forloop.counter }}{% endif %}</div>
+      <div class="small mt-1 {% if step.state == 'current' %}fw-bold{% elif step.state == 'todo' %}text-muted{% endif %}">{{ step.label }}</div>
+    </div>{% endfor %}
+  </div>{% if request_obj.status == 'reopened' %}<div class="alert alert-warning mt-3 mb-0 py-2 small">You reported this repair as not fixed. The landlord will send the same contractor back and ask you to confirm a new visit time.</div>{% endif %}</div>
+  {% endif %}
+  {% if access_failed_banner %}<div class="alert alert-warning"><i class="bi bi-door-closed me-1"></i><strong>The contractor could not get access at the last visit.</strong> The landlord has been told and will propose a new time. Please confirm it below so the repair can go ahead.</div>{% endif %}
+  <section class="card p-3 mb-4"><h5><i class="bi bi-calendar-check me-2"></i>Maintenance visits</h5>
+  <p class="small text-muted">Your landlord proposes visit times. Work only starts after you confirm one.</p>
+  {% for appt in visits %}<div class="border-bottom py-2"><strong>{{ appt.starts_at|date:'D d M Y, H:i' }} &ndash; {{ appt.ends_at|date:'H:i' }}</strong>
+   <span class="badge {% if appt.status == 'confirmed' or appt.status == 'attended' %}bg-success{% elif appt.status == 'proposed' %}bg-warning text-dark{% elif appt.status == 'reschedule' %}bg-info text-dark{% elif appt.status == 'no_access' %}bg-danger{% else %}bg-secondary{% endif %} ms-1">{% if appt.status == 'proposed' %}Needs your answer{% elif appt.status == 'reschedule' %}You asked for another time{% else %}{{ appt.get_status_display }}{% endif %}</span>
+   {% if appt.note %}<div class="small text-muted">{{ appt.note }}</div>{% endif %}
+   {% if appt.tenant_response %}<div class="small">Your reply: {{ appt.tenant_response }}</div>{% endif %}
+   {% if appt.status == 'proposed' %}
+   <div class="mt-2 d-flex flex-wrap gap-2 align-items-start">
+     <form method="post" action="{% url 'respond_appointment' appt.pk %}">{% csrf_token %}<button name="decision" value="confirm" class="btn btn-success btn-sm"><i class="bi bi-check2-circle me-1"></i>I am available: confirm</button></form>
+     <details><summary class="btn btn-outline-secondary btn-sm">I cannot make this time</summary>
+       <form method="post" action="{% url 'respond_appointment' appt.pk %}" class="mt-2">{% csrf_token %}
+         <textarea name="reason" required minlength="3" rows="2" class="form-control mb-2" placeholder="When are you free? e.g. Any weekday after 14:00"></textarea>
+         <button name="decision" value="reschedule" class="btn btn-primary btn-sm">Send to landlord</button>
+       </form></details>
+   </div>{% endif %}</div>
+  {% empty %}<p class="mb-0 text-muted">{% if not request_obj.assigned_staff %}No contractor has been assigned yet. Once one is, the landlord will arrange a visit time with you.{% elif request_obj.status == 'assigned' %}A contractor has been assigned and has been asked to accept the job. The landlord will then arrange a visit time.{% elif contractor_offered %}<i class="bi bi-check-circle text-success me-1"></i>The contractor has told the landlord when he is available. The landlord is now sending you a time to confirm. You will be notified.{% else %}The contractor has accepted the job. Waiting for him to share when he is available; the landlord will then send you a time to confirm.{% endif %}</p>{% endfor %}
+  {% if needs_new_time %}<p class="small text-muted mt-2 mb-0">The landlord will propose a new time. You will be notified.</p>{% endif %}</section>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card mb-4"><div class="card-body">
+        <h5>Request details</h5><p>{{ request_obj.description|linebreaks }}</p>
+        <div class="row"><div class="col-md-6"><b>Category:</b> {{ request_obj.get_category_display }}</div><div class="col-md-6"><b>Location:</b> {{ request_obj.building }} {{ request_obj.apartment_number }} {{ request_obj.location_description }}</div></div>
+        <div class="row mt-2"><div class="col-md-6"><b>Submitted:</b> {{ request_obj.created_at|date:'d M Y H:i' }}</div><div class="col-md-6"><b>SLA deadline:</b> {{ request_obj.sla_deadline|date:'d M Y H:i' }}</div></div>
+        <div class="row mt-2"><div class="col-md-6"><b>Fault noticed:</b> {% if request_obj.incident_at %}{{ request_obj.incident_at|date:'d M Y H:i' }}{% else %}Not stated{% endif %}</div><div class="col-md-6"><b>Contractor:</b> {% if request_obj.assigned_staff %}{{ request_obj.assigned_staff.get_full_name|default:request_obj.assigned_staff.username }}{% else %}Not assigned yet{% endif %}</div></div>
+        <div class="row mt-2"><div class="col-md-6"><b>Access:</b> {{ request_obj.get_access_permission_display }}</div><div class="col-md-6"><b>Preferred time:</b> {{ request_obj.get_preferred_visit_time_display|default:'No preference' }}</div></div>
+        {% if request_obj.safety_risk %}<div class="alert alert-danger py-2 mt-3 mb-0 small"><i class="bi bi-exclamation-triangle me-1"></i>You reported a safety risk, so this request is treated as high priority and the landlord was alerted straight away. If anyone is in danger, call the emergency services or campus security now.</div>{% endif %}
+        {% if request_obj.photo %}<hr><img src="{{ request_obj.photo.url }}" class="img-fluid rounded" style="max-height:350px" alt="Maintenance evidence">{% endif %}
+      </div></div>
+      <div class="card mb-4"><div class="card-body"><h5>Status history</h5>{% for h in status_history %}<div class="border-start border-3 ps-3 mb-3"><b>{{ h.get_new_status_display }}</b> — {{ h.created_at|date:'d M Y H:i' }}<br><small>{{ h.notes }} · by {{ h.changed_by.username }}</small></div>{% empty %}<p class="text-muted">No history available.</p>{% endfor %}</div></div>
+      <div class="card"><div class="card-body"><h5>Maintenance evidence</h5><p class="text-muted small">Evidence of completed work is recorded by contractors. You only need to confirm whether the repair is fixed.</p>{% for a in request_obj.attachments.all %}{% if a.uploaded_by.role == 'staff' %}<div class="mt-2"><a href="{{ a.file.url }}">{{ a.description|default:'Work evidence' }}</a> <small>{{ a.created_at|date:'d M Y H:i' }}</small></div>{% endif %}{% empty %}<p class="text-muted mb-0">No maintenance evidence uploaded.</p>{% endfor %}</div></div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card mb-4"><div class="card-body"><h5>Actions</h5>
+        {% if request_obj.status == 'completed' %}
+        <p class="small text-muted">The contractor says the work is done. Is the problem fixed?</p>
+        <form method="post" action="{% url 'verify_request' request_obj.id %}">{% csrf_token %}<button class="btn btn-success w-100">Yes, the Issue Is Fixed</button></form>
+        <form method="post" action="{% url 'reopen_request' request_obj.id %}" class="mt-2">{% csrf_token %}<textarea name="reason" class="form-control mb-2" rows="2" placeholder="What is still wrong? (optional)"></textarea><button class="btn btn-outline-danger w-100">No, the Issue Is Not Fixed</button><div class="form-text">The landlord will send the same contractor back, and you will be asked to confirm a new visit time.</div></form>
+        {% elif request_obj.status == 'verified' %}
+        <div class="alert alert-success py-2 small"><i class="bi bi-check-circle me-1"></i>You confirmed the repair is fixed. The landlord will complete the payment and close the request.</div>
+        <form method="post" action="{% url 'reopen_request' request_obj.id %}">{% csrf_token %}<textarea name="reason" class="form-control mb-2" rows="2" placeholder="Changed your mind? What is wrong?"></textarea><button class="btn btn-outline-danger btn-sm w-100">The problem is back</button></form>
+        {% elif request_obj.status == 'closed' %}
+        <p class="small text-muted">This request is closed.</p>
+        {% if request_obj.can_be_reopened_by_tenant %}<form method="post" action="{% url 'reopen_request' request_obj.id %}">{% csrf_token %}<textarea name="reason" class="form-control mb-2" rows="2" required placeholder="What has gone wrong again?"></textarea><button class="btn btn-outline-danger w-100">The problem came back: reopen</button><div class="form-text">You can reopen a closed request for {{ request_obj.REOPEN_WINDOW_DAYS }} days after it was closed. The same contractor returns.</div></form>
+        {% else %}<p class="small text-muted mb-0">The {{ request_obj.REOPEN_WINDOW_DAYS }}-day window to reopen has passed. Please submit a new request.</p>{% endif %}
+        {% elif request_obj.status == 'cancelled' %}<p class="text-muted small mb-0">This request was cancelled. Submit a new request if you still need help.</p>
+        {% elif request_obj.status == 'reopened' %}<p class="text-muted small mb-0">You reported this as not fixed. The landlord is sending the same contractor back and will propose a new visit time for you to confirm.</p>
+        {% elif request_obj.status in 'pending,under_review' %}<p class="text-muted small">The landlord is reviewing your request and will assign a contractor.</p>
+        {% elif request_obj.status == 'assigned' %}<p class="text-muted small">A contractor has been assigned. {% if awaiting_visit_response %}<strong>Please answer the visit proposal above.</strong>{% else %}The landlord will propose a visit time for you to confirm.{% endif %}</p>
+        {% elif request_obj.status == 'accepted' %}<p class="text-muted small">The contractor accepted the job. {% if awaiting_visit_response %}<strong>Please answer the visit proposal above.</strong>{% elif confirmed_visit %}Your visit is confirmed; work starts soon.{% elif contractor_offered %}The contractor shared his availability; the landlord is sending you a time to confirm.{% else %}Waiting for the contractor to share his availability; the landlord will then send you a time.{% endif %}</p>
+        {% elif request_obj.status == 'awaiting_parts' %}<p class="text-muted small">The contractor is waiting for parts. You will be told when work resumes.</p>
+        {% elif request_obj.status == 'in_progress' and access_failed_banner %}<p class="text-muted small">The contractor could not get in at the last visit. {% if awaiting_visit_response %}<strong>Please answer the visit proposal above.</strong>{% elif confirmed_visit %}Your return visit is confirmed.{% else %}The landlord will propose a new time for you to confirm.{% endif %}</p>
+        {% elif request_obj.status == 'in_progress' %}<p class="text-muted small">Work is under way. You will be asked to confirm the result once the contractor completes the job.</p>{% endif %}
+        {% if request_obj.can_be_cancelled_by_tenant %}<form method="post" action="{% url 'cancel_request' request_obj.id %}" class="mt-2">{% csrf_token %}<button class="btn btn-outline-danger w-100">Cancel Request</button></form>{% endif %}
+      </div></div>
+      <div class="card"><div class="card-body"><h5>Service feedback</h5>
+        {% if existing_feedback %}
+          <div class="alert alert-success py-2">Feedback submitted. Thank you.</div>
+          <p class="mb-1"><strong>Rating:</strong> {{ existing_feedback.rating }}/5</p>
+          {% if existing_feedback.comment %}<p class="mb-0"><strong>Comment:</strong> {{ existing_feedback.comment }}</p>{% endif %}
+        {% elif request_obj.status in 'verified,closed' %}
+          <p class="text-muted small">You may submit feedback once for this maintenance request.</p>
+          <form method="post" action="{% url 'submit_feedback' request_obj.id %}">{% csrf_token %}{{ feedback_form.as_p }}<button class="btn btn-primary">Submit Feedback</button></form>
+        {% else %}<p class="text-muted">Feedback becomes available after the repair is verified.</p>{% endif %}
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

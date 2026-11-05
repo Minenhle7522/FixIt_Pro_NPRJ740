@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}FixIt Pro — Maintenance Management{% endblock %}
+{% block content %}
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container py-2">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <p class="text-uppercase mb-2" style="font-size:0.75rem;letter-spacing:2px;color:var(--amber-400);font-weight:700">Property Maintenance Platform</p>
+        <h1 class="display-5 fw-bold mb-3">Fix issues <span class="hero-accent">faster.</span><br>Manage smarter.</h1>
+        <p class="mb-4" style="color:rgba(255,255,255,0.7);font-size:1.05rem;max-width:480px">FixIt Pro connects tenants, contractors, and administrators in one reliable maintenance management platform.</p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{% url 'login' %}" class="btn btn-amber px-4 py-2">Get Started <i class="bi bi-arrow-right ms-2"></i></a>
+          <a href="{% url 'register' %}" class="btn btn-outline-light px-4 py-2">Register as Tenant</a>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center mt-4 mt-lg-0">
+        <div class="row g-3" style="max-width:380px;position:relative;z-index:1">
+          <div class="col-6">
+            <div class="card text-center p-3">
+              <div class="fs-2 mb-1">🔧</div>
+              <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:1.5rem;color:var(--navy-900)">3-Role</div>
+              <div class="text-muted small">System Access</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="card text-center p-3">
+              <div class="fs-2 mb-1">⏱️</div>
+              <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:1.5rem;color:var(--navy-900)">SLA</div>
+              <div class="text-muted small">Deadline Monitoring</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="card text-center p-3">
+              <div class="fs-2 mb-1">📊</div>
+              <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:1.5rem;color:var(--navy-900)">Live</div>
+              <div class="text-muted small">Reporting</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="card text-center p-3">
+              <div class="fs-2 mb-1">⚡</div>
+              <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:1.5rem;color:var(--navy-900)">Fast</div>
+              <div class="text-muted small">Ticket Tracking</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <p class="text-uppercase mb-2" style="font-size:0.7rem;letter-spacing:2px;color:var(--amber-500);font-weight:700">Three portals. One system.</p>
+    <h2 class="mb-1">Built for everyone in the building</h2>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card p-4 h-100">
+        <div class="feature-icon"><i class="bi bi-house-door"></i></div>
+        <h5 class="mb-2">Tenant Portal</h5>
+        <p class="text-muted small mb-3">Submit maintenance requests with photos, track progress in real time, and track maintenance issues, receive updates, and verify completed repairs.</p>
+        <ul class="list-unstyled text-muted small">
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>Submit & track requests</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>Upload photos of issues</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>SLA monitoring and automated maintenance workflow</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4 h-100" style="border-top:3px solid var(--teal-500)">
+        <div class="feature-icon" style="background:var(--teal-500);color:white"><i class="bi bi-tools"></i></div>
+        <h5 class="mb-2">Contractor Portal</h5>
+        <p class="text-muted small mb-3">View assigned tasks, update job statuses, log progress notes, and manage your workload efficiently from one dashboard.</p>
+        <ul class="list-unstyled text-muted small">
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--teal-500)"></i>View assigned tasks</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--teal-500)"></i>Update job status</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--teal-500)"></i>Add progress notes</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4 h-100" style="border-top:3px solid var(--amber-500)">
+        <div class="feature-icon" style="background:var(--amber-500);color:var(--navy-900)"><i class="bi bi-shield-check"></i></div>
+        <h5 class="mb-2">Admin Portal</h5>
+        <p class="text-muted small mb-3">Full oversight of all requests, contractors management, cost tracking, performance reports, SLA monitoring, audit history, cost tracking, and maintenance workflow.</p>
+        <ul class="list-unstyled text-muted small">
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>Assign & manage all requests</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>Contractor performance reports</li>
+          <li class="mb-1"><i class="bi bi-check-circle-fill me-2" style="color:var(--amber-500)"></i>Cost & analytics dashboard</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div style="background:var(--navy-900);color:white;padding:3rem 0;">
+  <div class="container text-center">
+    <h3 class="mb-2">Ready to get started?</h3>
+    <p class="mb-4" style="color:rgba(255,255,255,0.6)">Register as a tenant or sign in with your existing account.</p>
+    <a href="{% url 'register' %}" class="btn btn-amber px-5 py-2 me-3">Register Now</a>
+    <a href="{% url 'login' %}" class="btn btn-outline-light px-5 py-2">Sign In</a>
+  </div>
+</div>
+
+{% endblock %}

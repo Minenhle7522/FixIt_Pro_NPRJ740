@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FixIt Pro{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts: Sora + DM Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        /* === FixIt Pro Palette: Midnight Navy + Amber Glow === */
+        --navy-900:  #0d1b2a;
+        --navy-800:  #1b2d42;
+        --navy-700:  #243b55;
+        --navy-600:  #2e4d6e;
+        --navy-400:  #4a7fa5;
+        --amber-500: #f59e0b;
+        --amber-400: #fbbf24;
+        --amber-300: #fcd34d;
+        --blue-500:  #3b6f94;
+        --blue-400:  #5f8fb2;
+        /* Compatibility aliases: existing templates can keep using teal class names,
+           but the visual accent now stays inside the FixIt Pro blue family. */
+        --teal-500:  var(--blue-500);
+        --teal-400:  var(--blue-400);
+        --red-500:   #ef4444;
+        --violet-500:var(--navy-600);
+        --green-500: #22c55e;
+        --surface:   #f8fafc;
+        --surface-2: #f1f5f9;
+        --border:    #e2e8f0;
+        --text-base: #1e293b;
+        --text-muted:#64748b;
+        --white:     #ffffff;
+
+        /* Role accent colours */
+        --admin-accent:  var(--amber-500);
+        --contractors-accent:  var(--blue-500);
+        --tenant-accent: var(--navy-400);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+
+      body {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background: var(--surface);
+        color: var(--text-base);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      h1, h2, h3, h4, h5 {
+        font-family: 'Sora', sans-serif;
+        font-weight: 700;
+      }
+
+      /* ─── Navbar ─────────────────────────────────────── */
+      .navbar {
+        background: var(--navy-900);
+        border-bottom: 3px solid var(--amber-500);
+        padding: 0.6rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+      .navbar-brand {
+        font-family: 'Sora', sans-serif;
+        font-weight: 800;
+        font-size: 1.35rem;
+        color: var(--white) !important;
+        letter-spacing: -0.5px;
+      }
+      .navbar-brand .brand-dot {
+        color: var(--amber-500);
+      }
+      .nav-link {
+        color: rgba(255,255,255,0.75) !important;
+        font-weight: 500;
+        font-size: 0.88rem;
+        padding: 0.45rem 0.9rem !important;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .nav-link:hover, .nav-link.active {
+        color: var(--white) !important;
+        background: rgba(245,158,11,0.15);
+      }
+      .role-badge-nav {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+      .role-admin  { background: var(--amber-500); color: var(--navy-900); }
+      .role-contractors  { background: var(--teal-500);  color: var(--white); }
+      .role-tenant { background: var(--navy-400);  color: var(--white); }
+
+      /* ─── Sidebar layout for dashboards ─────────────── */
+      .layout-with-sidebar {
+        display: flex;
+        flex: 1;
+      }
+      .sidebar {
+        width: 240px;
+        background: var(--navy-800);
+        min-height: calc(100vh - 70px);
+        padding: 1.5rem 1rem;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .sidebar-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.3);
+        padding: 0.75rem 0.75rem 0.25rem;
+        margin-top: 0.5rem;
+      }
+      .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+      }
+      .sidebar-link:hover {
+        color: white;
+        background: rgba(255,255,255,0.07);
+      }
+      .sidebar-link.active {
+        color: var(--amber-500);
+        background: rgba(245,158,11,0.12);
+        border-left-color: var(--amber-500);
+      }
+      .sidebar-link .bi { font-size: 1rem; }
+
+      .main-content {
+        flex: 1;
+        padding: 2rem;
+        max-width: calc(100% - 240px);
+        overflow-x: hidden;
+      }
+
+      /* ─── Cards ──────────────────────────────────────── */
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--white);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        transition: box-shadow 0.2s, transform 0.2s;
+      }
+      .card:hover { box-shadow: 0 12px 30px rgba(13,27,42,0.11); }
+
+      .stat-card {
+        border-left: 4px solid var(--amber-500) !important;
+      }
+      .stat-card.teal   { border-left-color: var(--teal-500) !important; }
+      .stat-card.violet { border-left-color: var(--violet-500) !important; }
+      .stat-card.green  { border-left-color: var(--green-500) !important; }
+      .stat-card.red    { border-left-color: var(--red-500) !important; }
+      .stat-card.navy   { border-left-color: var(--navy-400) !important; }
+
+      .stat-number {
+        font-family: 'Sora', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--text-base);
+      }
+      .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+      }
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+
+      /* ─── Buttons ─────────────────────────────────────── */
+      .btn {
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.55rem 1.25rem;
+        font-size: 0.875rem;
+        border: none;
+        transition: all 0.2s;
+      }
+      .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+      .btn-primary   { background: var(--navy-800); color: white; }
+      .btn-primary:hover { background: var(--navy-700); }
+      .btn-amber     { background: var(--amber-500); color: var(--navy-900); }
+      .btn-amber:hover { background: var(--amber-400); }
+      .btn-teal      { background: var(--teal-500); color: white; }
+      .btn-teal:hover { background: var(--teal-400); }
+      .btn-danger    { background: var(--red-500); color: white; }
+      .btn-success   { background: var(--green-500); color: white; }
+      .btn-outline-primary { border: 2px solid var(--navy-800); color: var(--navy-800); background: transparent; }
+      .btn-outline-primary:hover { background: var(--navy-800); color: white; }
+      ul.errorlist { list-style: none; padding: 0; margin: .3rem 0 0; color: #dc3545; font-size: .85rem; font-weight: 600; }
+      .form-control:has(+ ul.errorlist), .form-select:has(+ ul.errorlist) { border-color: #dc3545; }
+      .btn-outline-secondary { border: 2px solid #94a3b8; color: #334155; background: transparent; }
+      .btn-outline-secondary:hover { background: #334155; border-color: #334155; color: white; }
+      .btn-outline-danger { border: 2px solid #dc3545; color: #dc3545; background: transparent; }
+      .btn-outline-danger:hover { background: #dc3545; color: white; }
+      .btn-outline-success { border: 2px solid #198754; color: #198754; background: transparent; }
+      .btn-outline-success:hover { background: #198754; color: white; }
+      .btn-outline-warning { border: 2px solid #f59e0b; color: #b45309; background: transparent; }
+      .btn-outline-warning:hover { background: #f59e0b; color: #0b1220; }
+      .btn-warning { background: var(--amber-500); color: var(--navy-900); }
+      .btn-info { background: var(--teal-500); color: white; }
+
+      /* ─── Forms ──────────────────────────────────────── */
+      .form-control, .form-select {
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        font-size: 0.9rem;
+        background: var(--white);
+        transition: all 0.2s;
+      }
+      .form-control:focus, .form-select:focus {
+        border-color: var(--amber-500);
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+        outline: none;
+      }
+      .form-label { font-weight: 600; font-size: 0.85rem; color: var(--text-base); margin-bottom: 0.4rem; }
+
+      /* ─── Tables ──────────────────────────────────────── */
+      .table { background: white; border-radius: 12px; overflow: hidden; }
+      .table thead th {
+        background: var(--navy-900);
+        color: rgba(255,255,255,0.85);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 700;
+        border: none;
+        padding: 0.85rem 1rem;
+      }
+      .table tbody tr { transition: background 0.15s; }
+      .table tbody tr:hover { background: var(--surface-2); }
+      .table tbody td { padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid var(--border); border-top: none; }
+
+      /* ─── Badges ──────────────────────────────────────── */
+      .badge {
+        font-weight: 600;
+        font-size: 0.72rem;
+        padding: 0.3em 0.75em;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+      }
+      .bg-pending    { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #fbbf24; }
+      .bg-assigned   { background: #e0f2fe !important; color: #0c4a6e !important; border: 1px solid #7dd3fc; }
+      .bg-in_progress{ background: #e8f1f7 !important; color: #183b56 !important; border: 1px solid #8eb3cf; }
+      .bg-completed  { background: #dcfce7 !important; color: #14532d !important; border: 1px solid #86efac; }
+      .bg-cancelled  { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #cbd5e1; }
+      .bg-under_review   { background: #ede9fe !important; color: #4c1d95 !important; border: 1px solid #c4b5fd; }
+      .bg-accepted       { background: #dbeafe !important; color: #1e3a8a !important; border: 1px solid #93c5fd; }
+      .bg-awaiting_parts { background: #ffedd5 !important; color: #9a3412 !important; border: 1px solid #fdba74; }
+      .bg-verified       { background: #ccfbf1 !important; color: #115e59 !important; border: 1px solid #5eead4; }
+      .bg-closed         { background: #e2e8f0 !important; color: #0f172a !important; border: 1px solid #94a3b8; }
+      .bg-reopened       { background: #fee2e2 !important; color: #7f1d1d !important; border: 1px solid #fca5a5; }
+      .bg-low        { background: #dcfce7 !important; color: #14532d !important; border: 1px solid #86efac; }
+      .bg-medium     { background: #e0f2fe !important; color: #0c4a6e !important; border: 1px solid #7dd3fc; }
+      .bg-high       { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #fbbf24; }
+      .bg-urgent     { background: #fee2e2 !important; color: #7f1d1d !important; border: 1px solid #fca5a5; }
+
+      /* ─── Alerts ──────────────────────────────────────── */
+      .alert { border-radius: 12px; border: none; }
+      .alert-success  { background: #dcfce7; color: #14532d; border-left: 4px solid var(--green-500); }
+      .alert-danger   { background: #fee2e2; color: #7f1d1d; border-left: 4px solid var(--red-500); }
+      .alert-warning  { background: #fef3c7; color: #92400e; border-left: 4px solid var(--amber-500); }
+      .alert-info     { background: #e0f2fe; color: #0c4a6e; border-left: 4px solid var(--teal-500); }
+
+      /* ─── Page header ─────────────────────────────────── */
+      .page-header {
+        margin-bottom: 1.75rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .page-header h2 { margin: 0; font-size: 1.5rem; }
+      .page-header .breadcrumb { font-size: 0.8rem; margin: 0; }
+
+      /* ─── Activity feed ───────────────────────────────── */
+      .activity-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .activity-item:last-child { border-bottom: none; }
+      .activity-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        margin-top: 5px;
+        flex-shrink: 0;
+        background: var(--amber-500);
+      }
+      .activity-dot.teal   { background: var(--teal-500); }
+      .activity-dot.violet { background: var(--violet-500); }
+      .activity-dot.green  { background: var(--green-500); }
+      .activity-dot.red    { background: var(--red-500); }
+
+      /* ─── Priority dot ────────────────────────────────── */
+      .priority-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+      .priority-dot.urgent { background: var(--red-500); }
+      .priority-dot.high   { background: var(--amber-500); }
+      .priority-dot.medium { background: var(--teal-500); }
+      .priority-dot.low    { background: var(--green-500); }
+
+      /* ─── Progress bar ────────────────────────────────── */
+      .progress { height: 8px; border-radius: 100px; background: var(--border); }
+      .progress-bar { border-radius: 100px; background: var(--amber-500); }
+      .progress-bar.teal { background: var(--teal-500); }
+      .progress-bar.navy { background: var(--navy-700); }
+
+      /* ─── Hero home ───────────────────────────────────── */
+      .hero {
+        background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 60%, var(--navy-600) 100%);
+        color: white;
+        padding: 5rem 0 4rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::after {
+        content: '';
+        position: absolute;
+        right: -100px; top: -80px;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%);
+        border-radius: 50%;
+      }
+      .hero-accent {
+        color: var(--amber-400);
+      }
+
+      /* ─── Feature cards ───────────────────────────────── */
+      .feature-icon {
+        width: 56px; height: 56px;
+        background: var(--navy-900);
+        color: var(--amber-500);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+      }
+
+      /* ─── Footer ──────────────────────────────────────── */
+      .footer {
+        background: var(--navy-900);
+        color: rgba(255,255,255,0.5);
+        padding: 2rem 0;
+        margin-top: auto;
+        border-top: 3px solid var(--amber-500);
+        font-size: 0.85rem;
+      }
+      .footer .brand { color: white; font-family: 'Sora', sans-serif; font-weight: 700; }
+
+      /* ─── Notification badge ──────────────────────────── */
+      .notif-badge {
+        position: absolute;
+        top: 0; right: 0;
+        background: var(--red-500);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 700;
+        min-width: 16px; height: 16px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 3px;
+        transform: translate(25%, -25%);
+      }
+      .nav-icon-wrap { position: relative; display: inline-block; }
+
+      /* ─── Login card ──────────────────────────────────── */
+      .login-wrap {
+        min-height: calc(100vh - 70px);
+        display: flex; align-items: center;
+        background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%);
+      }
+      .login-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 100%; max-width: 440px;
+        margin: auto;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+      }
+      .login-logo {
+        width: 64px; height: 64px;
+        background: var(--navy-900);
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem;
+        color: var(--amber-500);
+        margin: 0 auto 1.25rem;
+      }
+      .demo-pill {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+      }
+      .demo-pill strong { font-family: 'Sora', sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+      /* ─── Dropdown ────────────────────────────────────── */
+      .dropdown-menu {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      }
+      .dropdown-item {
+        border-radius: 8px;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+      }
+      .dropdown-item:hover { background: var(--surface-2); }
+
+
+      /* ─── Motion system ─────────────────────────────────
+         Motion is deliberately functional: it guides attention, gives
+         interaction feedback and remains disabled for reduced-motion users. */
+      @keyframes fixitFadeUp {
+        from { opacity: 0; transform: translateY(24px) scale(0.985); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes fixitSlideDown {
+        from { opacity: 0; transform: translateY(-18px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fixitSoftPulse {
+        0%, 100% { transform: scale(1); opacity: 0.95; }
+        50% { transform: scale(1.07); opacity: 0.72; }
+      }
+      @keyframes fixitFloat {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(-16px, 12px, 0); }
+      }
+      @keyframes fixitTimelineReveal {
+        from { opacity: 0; transform: translateX(-16px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes fixitGlow {
+        0%, 100% { box-shadow: 0 0 0 rgba(245,158,11,0); }
+        50% { box-shadow: 0 0 0 6px rgba(245,158,11,0.08); }
+      }
+
+      .motion-enter {
+        opacity: 0;
+        animation: fixitFadeUp 0.62s cubic-bezier(.16,1,.3,1) forwards;
+        animation-delay: var(--motion-delay, 0ms);
+        will-change: transform, opacity;
+      }
+      .alert.motion-enter { animation-name: fixitSlideDown; }
+      .timeline-item.motion-enter { animation-name: fixitTimelineReveal; }
+
+      .card {
+        will-change: transform, box-shadow;
+        transition: transform 0.26s cubic-bezier(.2,.8,.2,1), box-shadow 0.26s ease, border-color 0.26s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 16px 36px rgba(13,27,42,0.12);
+        border-color: #cbd8e3;
+      }
+      .stat-card { position: relative; overflow: hidden; }
+      .stat-card::after {
+        content: '';
+        position: absolute;
+        inset: auto -35px -45px auto;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: rgba(74,127,165,0.06);
+        transition: transform 0.32s ease, opacity 0.32s ease;
+        pointer-events: none;
+      }
+      .stat-card:hover::after { transform: scale(1.18); opacity: 1; }
+
+      .sidebar-link { transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+      .sidebar-link:hover { transform: translateX(6px); }
+      .nav-link { transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease; }
+      .nav-link:hover { transform: translateY(-2px); }
+
+      .table tbody tr { transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
+      .table tbody tr:hover {
+        transform: translateX(4px);
+        background: #f5f8fb;
+        box-shadow: inset 3px 0 0 var(--navy-400);
+      }
+
+      .badge { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+      .badge:hover { transform: scale(1.055); box-shadow: 0 4px 12px rgba(13,27,42,0.10); }
+      .stat-icon { transition: transform 0.28s cubic-bezier(.2,.8,.2,1); }
+      .stat-card:hover .stat-icon { transform: rotate(-6deg) scale(1.11); }
+      .feature-icon { transition: transform 0.28s cubic-bezier(.2,.8,.2,1), box-shadow 0.28s ease; }
+      .card:hover .feature-icon { transform: translateY(-5px) rotate(-4deg); box-shadow: 0 8px 18px rgba(13,27,42,0.15); }
+
+      .btn { position: relative; overflow: hidden; }
+      .btn:hover { transform: translateY(-2px); box-shadow: 0 7px 16px rgba(13,27,42,0.16); }
+      .btn:active { transform: translateY(0) scale(0.975); }
+      .btn-amber:hover { animation: fixitGlow 1.4s ease-in-out infinite; }
+
+      .hero::after { animation: fixitFloat 8s ease-in-out infinite, fixitSoftPulse 5s ease-in-out infinite; }
+      .hero .container { position: relative; z-index: 1; }
+      .login-logo { animation: fixitSoftPulse 3.8s ease-in-out infinite; }
+
+      /* Status/activity timeline enhancement */
+      .timeline { position: relative; padding-left: 1.45rem; }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.42rem;
+        top: 0.35rem;
+        bottom: 0.35rem;
+        width: 2px;
+        background: linear-gradient(var(--navy-400), var(--border));
+      }
+      .timeline-item {
+        position: relative;
+        padding: 0.15rem 0 1.05rem 0.55rem;
+      }
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.31rem;
+        top: 0.35rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--amber-500);
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px rgba(74,127,165,0.18);
+      }
+
+      /* Numeric dashboard counters use this while JavaScript animates values. */
+      .stat-number[data-counting='true'] { font-variant-numeric: tabular-nums; }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+        .motion-enter { opacity: 1 !important; transform: none !important; }
+        .card:hover, .table tbody tr:hover, .sidebar-link:hover, .nav-link:hover, .btn:hover { transform: none !important; }
+      }
+
+      /* ─── Responsive ──────────────────────────────────── */
+      @media (max-width: 768px) {
+        .sidebar { display: none; }
+        .main-content { max-width: 100%; padding: 1rem; }
+      }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{% url 'home' %}">
+      <i class="bi bi-wrench-adjustable me-2"></i>FixIt<span class="brand-dot">.</span>Pro
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center gap-1">
+          {% if user.is_authenticated %}
+          {% if user.is_tenant %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'tenant_dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'submit_request' %}"><i class="bi bi-plus-circle me-1"></i>New Request</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'notifications' %}"><i class="bi bi-bell me-1"></i>Notifications{% if unread_notifications %} <span class="badge rounded-pill bg-danger">{{ unread_notifications }}</span>{% endif %}</a></li>
+          {% elif user.is_staff_user %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'staff_dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'my_tasks' %}"><i class="bi bi-list-task me-1"></i>My Tasks</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'notifications' %}"><i class="bi bi-bell me-1"></i>Notifications{% if unread_notifications %} <span class="badge rounded-pill bg-danger">{{ unread_notifications }}</span>{% endif %}</a></li>
+          {% elif user.is_admin_user %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'all_requests' %}"><i class="bi bi-list-ul me-1"></i>Requests</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'notifications' %}"><i class="bi bi-bell me-1"></i>Notifications{% if unread_notifications %} <span class="badge rounded-pill bg-danger">{{ unread_notifications }}</span>{% endif %}</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'manage_staff' %}"><i class="bi bi-people me-1"></i>Contractor</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'reports' %}"><i class="bi bi-graph-up me-1"></i>Reports</a></li>
+          {% endif %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+              <span class="nav-icon-wrap me-1"><i class="bi bi-person-circle fs-5"></i></span>
+              {{ user.first_name|default:user.username }}
+              {% if user.is_admin_user %}<span class="role-badge-nav role-admin">Admin</span>
+              {% elif user.is_staff_user %}<span class="role-badge-nav role-staff">Contractor</span>
+              {% else %}<span class="role-badge-nav role-tenant">Tenant</span>{% endif %}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2 text-muted"></i>My Profile</a></li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+            </ul>
+          </li>
+          {% if user.is_admin_user %}
+            <!-- SLA badges link to landlord-only request filters. -->
+            <li class="nav-item d-flex align-items-center ms-3">
+              {% if sla_at_risk_count %}
+                <a class="nav-link position-relative" href="{% url 'all_requests' %}?filter=at_risk" aria-label="{{ sla_at_risk_count }} requests at risk of missing their SLA" title="At-risk requests">
+                  <i class="bi bi-exclamation-circle text-warning fs-5"></i>
+                  <span class="notif-badge">{{ sla_at_risk_count }}</span>
+                </a>
+              {% endif %}
+              {% if sla_breached_count %}
+                <a class="nav-link position-relative ms-2" href="{% url 'all_requests' %}?filter=breached" aria-label="{{ sla_breached_count }} requests have breached their SLA" title="Breached requests">
+                  <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                  <span class="notif-badge">{{ sla_breached_count }}</span>
+                </a>
+              {% endif %}
+            </li>
+          {% endif %}
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Sign In</a></li>
+          <li class="nav-item"><a class="nav-link btn btn-amber ms-2 px-3" href="{% url 'register' %}" style="color:var(--navy-900)!important">Register</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{% if messages %}
+<div class="container-fluid px-4 mt-3">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+    <i class="bi bi-info-circle-fill"></i> {{ message }}
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="flex-grow-1">{% block content %}{% endblock %}</main>
+
+<footer class="footer">
+  <div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="brand"><i class="bi bi-wrench-adjustable me-1" style="color:var(--amber-500)"></i>FixIt<span style="color:var(--amber-500)">.</span>Pro</span>
+      <span>Smart maintenance management &mdash; Built with Django &bull; &copy; 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
+    // Stagger meaningful interface sections so dashboards feel alive without
+    // delaying access to controls or changing any application behaviour.
+    const selectors = [
+      '.page-header',
+      '.stat-card',
+      'main .card',
+      '.table-responsive',
+      '.login-card',
+      '.hero .container',
+      '.alert',
+      '.activity-item',
+      '.timeline-item'
+    ];
+
+    const seen = new Set();
+    let index = 0;
+    document.querySelectorAll(selectors.join(',')).forEach(function (element) {
+      if (seen.has(element)) return;
+      seen.add(element);
+      element.classList.add('motion-enter');
+      element.style.setProperty('--motion-delay', Math.min(index * 70, 630) + 'ms');
+      index += 1;
+    });
+
+    // Animate dashboard totals only when the visible text is a plain whole
+    // number. Currency, percentages, IDs and dates are intentionally ignored.
+    const counters = document.querySelectorAll('.stat-number');
+    const animateCounter = function (element) {
+      const raw = element.textContent.trim().replace(/,/g, '');
+      if (!/^\d+$/.test(raw)) return;
+      const target = Number(raw);
+      if (!Number.isFinite(target) || target < 1) return;
+
+      const duration = 850;
+      const start = performance.now();
+      element.dataset.counting = 'true';
+
+      const tick = function (now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = Math.round(target * eased).toLocaleString();
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          element.textContent = target.toLocaleString();
+          delete element.dataset.counting;
+        }
+      };
+      requestAnimationFrame(tick);
+    };
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          animateCounter(entry.target);
+          obs.unobserve(entry.target);
+        });
+      }, { threshold: 0.45 });
+      counters.forEach(function (counter) { observer.observe(counter); });
+    } else {
+      counters.forEach(animateCounter);
+    }
+  });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
